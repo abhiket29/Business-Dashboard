@@ -6,11 +6,11 @@ import ProductDetailsPage from './components/pages/ProductDetailsPage';
 import { useAuth } from './hooks/useAuth';
 
 /**
- * Main App component with routing logic
+ * Main App component with Firebase authentication and routing logic
  * @returns {JSX.Element}
  */
 function App() {
-  const { user, login, logout, isAuthenticated } = useAuth();
+  const { user, loading, isAuthenticated } = useAuth();
   const [currentPage, setCurrentPage] = useState('login');
   const [uploadedData, setUploadedData] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -20,7 +20,7 @@ function App() {
   useEffect(() => {
     if (isAuthenticated && currentPage === 'login') {
       setCurrentPage('upload');
-    } else if (!isAuthenticated) {
+    } else if (!isAuthenticated && currentPage !== 'login') {
       setCurrentPage('login');
       // Reset state when user logs out
       setUploadedData([]);
@@ -28,22 +28,6 @@ function App() {
       setSidebarTab('dashboard');
     }
   }, [isAuthenticated, currentPage]);
-
-  const handleLogin = async () => {
-    try {
-      await login();
-    } catch (error) {
-      console.error('Login failed:', error);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  };
 
   const handleFileUpload = (data) => {
     setUploadedData(data);
@@ -61,9 +45,21 @@ function App() {
     setSelectedProduct(null);
   };
 
+  // Show loading spinner while checking auth state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   const renderCurrentPage = () => {
     if (!isAuthenticated) {
-      return <LoginPage onLogin={handleLogin} />;
+      return <LoginPage />;
     }
 
     switch (currentPage) {
@@ -74,7 +70,6 @@ function App() {
           <DashboardLayout 
             user={user}
             data={uploadedData}
-            onLogout={handleLogout}
             onProductSelect={handleProductSelect}
             sidebarTab={sidebarTab}
             onSidebarTabChange={setSidebarTab}

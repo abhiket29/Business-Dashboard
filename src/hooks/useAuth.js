@@ -1,54 +1,93 @@
 import { useState, useEffect } from 'react';
-import { mockAuth } from '../services/mockAuth';
+import { 
+  onAuthChange, 
+  signInWithEmail, 
+  signUpWithEmail, 
+  signInWithGoogle, 
+  logOut,
+  resetPassword
+} from '../components/auth/authService.js'
 
-/**
- * Custom hook for authentication
- * @returns {Object} Auth state and methods
- */
 export const useAuth = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = mockAuth.onAuthStateChanged((user) => {
+    const unsubscribe = onAuthChange((user) => {
       setUser(user);
       setLoading(false);
+      setError(null);
     });
 
-    return unsubscribe;
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
-  const login = async () => {
-    try {
-      setError(null);
-      setLoading(true);
-      const result = await mockAuth.signInWithPopup();
-      return result;
-    } catch (error) {
-      setError(error.message);
-      throw error;
-    } finally {
-      setLoading(false);
+  // Auth methods
+  const login = async (email, password) => {
+    setLoading(true);
+    setError(null);
+    
+    const result = await signInWithEmail(email, password);
+    
+    if (!result.success) {
+      setError(result.error);
     }
+    
+    setLoading(false);
+    return result;
+  };
+
+  const signup = async (email, password, displayName) => {
+    setLoading(true);
+    setError(null);
+    
+    const result = await signUpWithEmail(email, password, displayName);
+    
+    if (!result.success) {
+      setError(result.error);
+    }
+    
+    setLoading(false);
+    return result;
+  };
+
+  const loginWithGoogle = async () => {
+    setLoading(true);
+    setError(null);
+    
+    const result = await signInWithGoogle();
+    
+    if (!result.success) {
+      setError(result.error);
+    }
+    
+    setLoading(false);
+    return result;
   };
 
   const logout = async () => {
-    try {
-      setError(null);
-      await mockAuth.signOut();
-    } catch (error) {
-      setError(error.message);
-      throw error;
-    }
+    setLoading(true);
+    const result = await logOut();
+    setLoading(false);
+    return result;
+  };
+
+  const forgotPassword = async (email) => {
+    const result = await resetPassword(email);
+    return result;
   };
 
   return {
     user,
     loading,
     error,
+    isAuthenticated: !!user,
     login,
+    signup,
+    loginWithGoogle,
     logout,
-    isAuthenticated: !!user
+    forgotPassword
   };
 };

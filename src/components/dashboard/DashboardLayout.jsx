@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAuth } from '../../hooks/useAuth';
 import Sidebar from './Sidebar';
 import DashboardContent from './DashboardContent';
 import ChatbotTab from '../tabs/ChatbotTab';
@@ -16,11 +17,21 @@ import { calculateTotal } from '../../utils/helpers';
 const DashboardLayout = ({ 
   user, 
   data, 
-  onLogout, 
   onProductSelect, 
   sidebarTab, 
   onSidebarTabChange 
 }) => {
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // The App component will handle the navigation automatically
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   const totalSales = calculateTotal(data, 'sales');
   const totalProfit = calculateTotal(data, 'profit');
   const totalExpenses = data.reduce((sum, item) => sum + (item.te + item.amazonFee), 0);
@@ -37,6 +48,63 @@ const DashboardLayout = ({
         return <AmazonIntegration />;
       case 'shopify':
         return <ShopifyIntegration />;
+      case 'analytics':
+        return (
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Analytics</h3>
+            <p className="text-gray-600">Analytics features coming soon...</p>
+          </div>
+        );
+      case 'products':
+        return (
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Products</h3>
+            {data.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Product
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Category
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {data.map((item, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {item.name || `Product ${index + 1}`}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {item.category || 'No category'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => onProductSelect(item)}
+                            className="text-blue-600 hover:text-blue-900 transition-colors duration-200"
+                          >
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No products available.</p>
+                <p className="text-sm text-gray-400 mt-2">Upload a CSV file to add products.</p>
+              </div>
+            )}
+          </div>
+        );
       default:
         return <DashboardContent data={data} onProductSelect={onProductSelect} />;
     }
@@ -54,7 +122,7 @@ const DashboardLayout = ({
         user={user}
         activeTab={sidebarTab}
         onTabChange={onSidebarTabChange}
-        onLogout={onLogout}
+        onLogout={handleLogout}
         sidebarItems={SIDEBAR_ITEMS}
       />
 
