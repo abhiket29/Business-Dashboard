@@ -24,7 +24,7 @@ A comprehensive React application for business analytics with Google Authenticat
 
 ## Tech Stack
 
-- React 18
+- React 19
 - Tailwind CSS
 - Recharts
 - Firebase Authentication
